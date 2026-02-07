@@ -13,16 +13,16 @@ export default function Home() {
 
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
           <Link
-            href="/student"
+            href="/professor"
             className="flex items-center justify-center px-8 py-3 text-base font-semibold text-white bg-indigo-600 rounded-xl shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all duration-200"
           >
-            Student&apos;s Page
+            Professor&apos;s Page
           </Link>
           <Link
-            href="/professor"
+            href="/student"
             className="flex items-center justify-center px-8 py-3 text-base font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
           >
-            Professor&apos;s Page
+            Student&apos;s Page
           </Link>
         </div>
       </main>

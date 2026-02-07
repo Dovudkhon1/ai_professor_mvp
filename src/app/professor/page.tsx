@@ -21,6 +21,21 @@ export default function ProfessorPage() {
             name: "Professor Nelly",
             imgUrl: "/avatars/Professor-Nelly.png", // 👈 local file
         },
+        {
+            id: "professor-john",
+            name: "Professor John",
+            imgUrl: "/avatars/Professor-John.png",
+        },
+        {
+            id: "professor-katherine",
+            name: "Professor Katherine",
+            imgUrl: "/avatars/Professor-Katherine.png",
+        },
+        {
+            id: "professor-qobiljon",
+            name: "Professor Qobiljon",
+            imgUrl: "/avatars/Professor-Qobiljon.png",
+        },
     ]);
 
 
