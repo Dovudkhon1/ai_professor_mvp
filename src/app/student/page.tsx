@@ -188,7 +188,7 @@ export default function StudentPage() {
         <div className="min-h-screen bg-gray-50 text-neutral-900">
             <header className="border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
                 <div className="flex items-center justify-between">
-                    <div className="text-lg font-bold text-gray-800">Student Page</div>
+                    <div className="text-lg font-bold text-gray-800">Student's Page</div>
                     <nav className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                         <a href="/professor">
                             ← Professor page
