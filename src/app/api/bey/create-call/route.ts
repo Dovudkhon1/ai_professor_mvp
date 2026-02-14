@@ -1,22 +1,40 @@
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(req: Request) {
     const apiKey = process.env.BEY_API_KEY;
-    const agentId = process.env.BEY_AGENT_ID;
+
+    // Default agent
+    let agentId = process.env.BEY_AGENT_ID;
+
+    try {
+        const body = await req.json();
+        const { topicId } = body;
+
+        // Map topic to agent ID
+        if (topicId === "supply-demand" && process.env.SUPPLY_DEMAND_AGENT_ID) {
+            agentId = process.env.SUPPLY_DEMAND_AGENT_ID;
+        } else if (topicId === "stock-market" && process.env.STOCK_MARKET_AGENT_ID) {
+            agentId = process.env.STOCK_MARKET_AGENT_ID;
+        } else if (topicId === "inflation" && process.env.INFLATION_AGENT_ID) {
+            agentId = process.env.INFLATION_AGENT_ID;
+        }
+    } catch {
+        // Ignore json parse details, use default agent
+    }
 
     if (!apiKey || !agentId) {
         return NextResponse.json(
-            { error: "Missing BEY_API_KEY or BEY_AGENT_ID in .env.local" },
+            { error: "Missing API configuration in .env.local" },
             { status: 500 }
         );
     }
 
-    // Beyond Presence: Create Call -> returns livekit_url + livekit_token :contentReference[oaicite:3]{index=3}
+    // Beyond Presence: Create Call -> returns livekit_url + livekit_token
     const resp = await fetch("https://api.bey.dev/v1/calls", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "x-api-key": apiKey, // auth header :contentReference[oaicite:4]{index=4}
+            "x-api-key": apiKey,
         },
         body: JSON.stringify({
             agent_id: agentId,
@@ -38,5 +56,6 @@ export async function POST() {
         callId: data.id,
         livekitUrl: data.livekit_url,
         livekitToken: data.livekit_token,
+        agentIdUsed: agentId
     });
 }

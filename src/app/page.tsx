@@ -1,31 +1,65 @@
-import Link from "next/link";
+"use client";
+
+import React, { useState } from "react";
+import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
+import MainContent from "@/components/MainContent";
+import SettingsSidebar from "@/components/SettingsSidebar";
+
+export type Topic = {
+  id: string;
+  title: string;
+  subtitle: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+};
+
+const TOPICS: Topic[] = [
+  {
+    id: "supply-demand",
+    title: "Supply & Demand",
+    subtitle: "Iqtisodiyot 101 • 1-ma'ruza",
+    videoUrl: "/videos/supply-demand.mp4",
+    thumbnailUrl: "/history_thumbnails/thumbnail-supply-demand.png",
+  },
+  {
+    id: "stock-market",
+    title: "Stock Market",
+    subtitle: "Moliya 101 • 2-ma'ruza",
+    videoUrl: "/videos/Stock-Market.mp4",
+    thumbnailUrl: "/history_thumbnails/thumbnail-stock.png",
+  },
+  {
+    id: "inflation",
+    title: "Inflation",
+    subtitle: "Makroiqtisodiyot • 3-ma'ruza",
+    videoUrl: "/videos/inflation.mp4",
+    thumbnailUrl: "/history_thumbnails/thumbnail-inflation.png",
+  },
+];
 
 export default function Home() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 text-neutral-900">
-      <main className="flex flex-col items-center gap-8 px-4 text-center">
-        <h1 className="text-5xl font-extrabold text-gray-900 tracking-tight sm:text-6xl">
-          AI Professor
-        </h1>
-        <p className="max-w-md text-lg text-gray-600">
-          Interactive learning with AI avatars. Choose your role to get started.
-        </p>
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [currentTopic, setCurrentTopic] = useState<Topic>(TOPICS[0]);
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-          <Link
-            href="/professor"
-            className="flex items-center justify-center px-8 py-3 text-base font-semibold text-white bg-indigo-600 rounded-xl shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all duration-200"
-          >
-            Professor&apos;s Page
-          </Link>
-          <Link
-            href="/student"
-            className="flex items-center justify-center px-8 py-3 text-base font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
-          >
-            Student&apos;s Page
-          </Link>
-        </div>
-      </main>
+  return (
+    <div className="h-screen bg-gray-50 flex flex-col font-sans overflow-hidden">
+      <Header onMenuClick={() => setIsSettingsOpen(!isSettingsOpen)} />
+
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Settings Overlay Sidebar */}
+        <SettingsSidebar
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+
+        <Sidebar
+          topics={TOPICS}
+          activeTopic={currentTopic}
+          onSelectTopic={setCurrentTopic}
+        />
+        <MainContent topic={currentTopic} />
+      </div>
     </div>
   );
 }
