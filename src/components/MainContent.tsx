@@ -6,10 +6,12 @@ import { Mic, Plus, Download, Save, Send, Loader2 } from "lucide-react";
 import { Topic } from "@/app/page";
 
 type CallInfo = {
-    callId: string;
-    livekitUrl: string;
+    callId?: string;
+    livekitUrl?: string;
     livekitUrlToken?: string;
-    livekitToken: string;
+    livekitToken?: string;
+    // Set when the API plan can't create calls (Starter plan); redirect here instead.
+    fallbackUrl?: string;
 };
 
 type MainContentProps = {
@@ -115,6 +117,23 @@ export default function MainContent({ topic }: MainContentProps) {
             call = await createBeyondPresenceCall();
         } catch (e) {
             console.error(e);
+            setStatus("Qo'ng'iroqni boshlashda xatolik.");
+            if (player) player.play().catch(() => { });
+            return;
+        }
+
+        // Starter plan: API can't create calls, so open the hosted call page instead.
+        if (call.fallbackUrl) {
+            window.open(call.fallbackUrl, "_blank", "noopener,noreferrer");
+            setStatus("Suhbat yangi oynada ochildi.");
+            if (player) {
+                if (videoStateRef.current.time > 0) player.currentTime = videoStateRef.current.time;
+                player.play().catch(() => { });
+            }
+            return;
+        }
+
+        if (!call.livekitUrl || !call.livekitToken) {
             setStatus("Qo'ng'iroqni boshlashda xatolik.");
             if (player) player.play().catch(() => { });
             return;

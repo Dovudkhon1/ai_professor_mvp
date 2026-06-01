@@ -46,10 +46,13 @@ export async function POST(req: Request) {
     const data = await resp.json();
 
     if (!resp.ok) {
-        return NextResponse.json(
-            { error: "Beyond Presence create call failed", details: data },
-            { status: 500 }
-        );
+        // Programmatic call creation requires the Growth plan. On Starter (or any
+        // forbidden response) fall back to the hosted call page at bey.chat.
+        return NextResponse.json({
+            fallbackUrl: `https://bey.chat/${agentId}`,
+            status: resp.status,
+            details: data,
+        });
     }
 
     return NextResponse.json({
