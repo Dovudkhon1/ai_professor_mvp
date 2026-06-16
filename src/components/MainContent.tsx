@@ -28,6 +28,7 @@ export default function MainContent({ topic }: MainContentProps) {
     const videoStateRef = useRef({ time: 0, volume: 1, muted: false });
 
     const [mode, setMode] = useState<"video" | "call">("video");
+    const [isConnecting, setIsConnecting] = useState(false);
     const [pausedAt, setPausedAt] = useState<number>(0);
     const [status, setStatus] = useState<string>("");
     const [inputValue, setInputValue] = useState("");
@@ -39,6 +40,7 @@ export default function MainContent({ topic }: MainContentProps) {
             stopCall().catch(() => { });
         }
         setMode("video");
+        setIsConnecting(false);
         setPausedAt(0);
         setStatus("");
         // Video ref source update happens automatically via render prop, but we may need to reload if not auto-detected
@@ -56,24 +58,15 @@ export default function MainContent({ topic }: MainContentProps) {
     }, []);
 
     useEffect(() => {
-        if (mode !== "video") return;
-
         const player = playerRef.current;
         if (!player) return;
 
-        // Only restore state if we are returning to the SAME video we paused. 
-        // Since topic change resets mode to video, this logic runs. 
-        // However, we reset pausedAt to 0 on topic change, so it starts from beginning which is correct for new topic.
-        // If just toggling mode within same topic, it restores time.
-
-        const { time, volume, muted } = videoStateRef.current;
-        // If we just switched topics, time might be irrelevant, but useEffect dependency on mode handles toggle.
-        // We need to be careful not to seek to old time if topic changed.
-
-        // Simple fix: rely on standard behavior. If we just mounted or switched mode back:
-        if (pausedAt > 0) {
-            player.currentTime = pausedAt;
+        if (mode === "call") {
+            player.pause();
+            return;
         }
+
+        const { volume, muted } = videoStateRef.current;
 
         player.muted = false;
         player.volume = volume ?? 1;
@@ -84,7 +77,7 @@ export default function MainContent({ topic }: MainContentProps) {
                 console.warn("Video play blocked by browser policy:", err);
             });
         }
-    }, [mode, pausedAt]);
+    }, [mode]);
 
     async function createBeyondPresenceCall(): Promise<CallInfo> {
         const resp = await fetch("/api/bey/create-call", {
@@ -127,7 +120,6 @@ export default function MainContent({ topic }: MainContentProps) {
             window.open(call.fallbackUrl, "_blank", "noopener,noreferrer");
             setStatus("Suhbat yangi oynada ochildi.");
             if (player) {
-                if (videoStateRef.current.time > 0) player.currentTime = videoStateRef.current.time;
                 player.play().catch(() => { });
             }
             return;
@@ -214,14 +206,19 @@ export default function MainContent({ topic }: MainContentProps) {
         // Only restore playback if on same topic (which is true unless user clicked sidebar mid-call)
         const player = playerRef.current;
         if (player) {
-            if (pausedAt > 0) player.currentTime = pausedAt;
-            player.play().catch(() => { });
+            // Playback is resumed by the useEffect when mode switches back to 'video'
         }
     }
 
     async function onAskQuestionClick() {
-        if (mode === "video") await startCall();
-        else await stopCall();
+        if (isConnecting) return;
+        setIsConnecting(true);
+        try {
+            if (mode === "video") await startCall();
+            else await stopCall();
+        } finally {
+            setIsConnecting(false);
+        }
     }
 
     return (
@@ -250,18 +247,21 @@ export default function MainContent({ topic }: MainContentProps) {
 
                 <button
                     onClick={onAskQuestionClick}
+                    disabled={isConnecting}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition-all shadow-sm flex-shrink-0 ${mode === "video"
                         ? "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md"
                         : "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
-                        }`}
+                        } ${isConnecting ? "opacity-75 cursor-not-allowed" : ""}`}
                 >
-                    {mode === "video" ? (
-                        "Savol berish"
-                    ) : (
+                    {isConnecting ? (
                         <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Suhbatni tugatish</span>
+                            <span>{mode === "video" ? "Ulanmoqda..." : "Tugatilmoqda..."}</span>
                         </>
+                    ) : mode === "video" ? (
+                        "Savol berish"
+                    ) : (
+                        "Suhbatni tugatish"
                     )}
                 </button>
             </div>
@@ -269,29 +269,27 @@ export default function MainContent({ topic }: MainContentProps) {
             {/* Video Area (Flex Grow) */}
             <div className="flex-1 w-full flex items-center justify-center bg-black/5 rounded-2xl overflow-hidden shadow-lg ring-1 ring-gray-900/10 mb-6">
                 <div className="relative w-full max-w-4xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
-                    {mode === "video" ? (
-                        <video
-                            ref={playerRef}
-                            src={topic.videoUrl}
-                            controls
-                            playsInline
-                            className="w-full h-full object-contain"
-                        />
-                    ) : (
-                        <>
-                            <video
-                                ref={avatarVideoRef}
-                                autoPlay
-                                playsInline
-                                className="w-full h-full object-cover"
-                            />
-                            <audio ref={avatarAudioRef} autoPlay />
-                            <div className="absolute inset-x-0 bottom-4 text-center pointer-events-none">
-                                <span className="inline-block px-3 py-1 bg-black/50 text-white text-sm rounded-full backdrop-blur-sm">
-                                    {status}
-                                </span>
-                            </div>
-                        </>
+                    <video
+                        ref={playerRef}
+                        src={topic.videoUrl}
+                        controls
+                        playsInline
+                        className={`w-full h-full object-contain ${mode === "video" ? "block" : "hidden"} ${isConnecting ? "pointer-events-none" : ""}`}
+                    />
+                    <video
+                        ref={avatarVideoRef}
+                        autoPlay
+                        playsInline
+                        className={`w-full h-full object-cover ${mode === "call" ? "block" : "hidden"}`}
+                    />
+                    <audio ref={avatarAudioRef} autoPlay />
+
+                    {status && (
+                        <div className="absolute inset-x-0 bottom-4 text-center pointer-events-none z-10">
+                            <span className="inline-block px-3 py-1 bg-black/50 text-white text-sm rounded-full backdrop-blur-sm">
+                                {status}
+                            </span>
+                        </div>
                     )}
                 </div>
             </div>
